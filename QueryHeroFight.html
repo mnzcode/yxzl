@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>王者荣耀英雄战力查询</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            display: block;
+            width: 48%; /* 设置标签宽度为48% */
+            margin-bottom: 8px;
+        }
+
+        input,
+        select {
+            width: 70%;
+            padding: 8px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+
+        #heroForm {
+            display: flex;
+            justify-content: space-between; /* 将表单元素分散对齐 */
+            flex-wrap: wrap; /* 当窗口较小时换行 */
+        }
+
+        #queryButton {
+            width: 30%;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #warning {
+            color: #ff0000;
+            margin-top: 10px;
+        }
+
+        #heroInfo {
+            margin-top: 20px;
+        }
+
+        #heroInfo img {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+
+        #heroInfo table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        #heroInfo th,
+        #heroInfo td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #heroInfo th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #loading {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>王者荣耀英雄战力查询</h1>
+
+    <form id="heroForm">
+        <label for="heroName">输入英雄名称：</label>
+        <!-- 使用datalist添加提示 -->
+        <!-- <input type="text" id="heroName" name="heroName" list="heroes" required> -->
+        <input type="text" id="heroName" name="heroName" required>
+        <!-- <datalist id="heroes"> -->
+            <!-- 动态生成提示选项 -->
+        <!-- </datalist> -->
+
+        <label for="platform">选择战区：</label>
+        <select id="platform" name="platform" required>
+            <option value="aqq">安卓QQ</option>
+            <option value="awx">安卓微信</option>
+            <option value="iqq">苹果QQ</option>
+            <option value="iwx">苹果微信</option>
+        </select><br />
+
+        <button type="button" id="queryButton" onclick="queryHero()">
+            <span id="loading"></span>查询
+        </button>
+    </form>
+
+    <div id="warning"></div>
+
+    <div id="result"></div>
+
+    <script>
+        // 数据源
+        // var heros = ['廉颇', '小乔', '赵云', '墨子', '妲己', '嬴政', '孙尚香', '鲁班七号', '庄周', '刘禅', '高渐离', '阿轲', '钟无艳', '孙膑', '扁鹊', '白起', '芈月', '吕布', '周瑜', '夏侯惇', '甄姬', '曹操', '典韦', '宫本武藏', '李白', '马可波罗', '狄仁杰', '达摩', '项羽', '武则天', '老夫子', '关羽', '貂蝉', '安琪拉', '程咬金', '露娜', '姜子牙', '刘邦', '韩信', '王昭君', '兰陵王', '花木兰', '张良', '不知火舞', '娜可露露', '橘右京', '亚瑟', '孙悟空', '牛魔', '后羿', '刘备', '张飞', '李元芳', '虞姬', '钟馗', '成吉思汗', '杨戬', '雅典娜', '蔡文姬', '太乙真人', '哪吒', '诸葛亮', '黄忠', '大乔', '东皇太一', '干将莫邪', '鬼谷子', '铠', '百里守约', '百里玄策', '苏烈', '梦奇', '女娲', '明世隐', '公孙离', '杨玉环', '裴擒虎', '弈星', '狂铁', '米莱狄', '元歌', '孙策', '司马懿', '盾山', '伽罗', '沈梦溪', '李信', '上官婉儿', '嫦娥', '猪八戒', '盘古', '瑶', '云中君', '曜', '马超', '西施', '鲁班大师', '蒙犽', '镜', '蒙恬', '阿古朵', '夏洛特', '澜', '司空震', '艾琳', '云缨', '金蝉', '暃', '桑启', '戈娅', '海月', '赵怀真', '莱西奥', '姬小满', '亚连', '朵莉亚', '海诺'];
+
+        // // 动态生成datalist选项
+        // var datalist = document.getElementById('heroes');
+        // heros.forEach(function (hero) {
+        //     var option = document.createElement('option');
+        //     option.value = hero;
+        //     datalist.appendChild(option);
+        // });
+
+
+        function queryHero() {
+            var heroName = document.getElementById('heroName').value;
+            var platform = document.getElementById('platform').value;
+
+            if (heroName.trim() === '') {
+                alert('请输入英雄名称');
+                return;
+            }
+
+            // 禁用按钮，显示加载动画
+            var queryButton = document.querySelector('#heroForm button');
+            var loadingSpan = document.querySelector('#loading');
+
+            queryButton.disabled = true;
+            loadingSpan.style.display = 'inline-block';
+
+            // 发起查询请求
+            var url = 'https://www.sapi.run/hero/select.php?hero=' + encodeURIComponent(heroName) + '&type=' + encodeURIComponent(platform);
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayResult(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    // 恢复按钮状态，隐藏加载动画
+                    queryButton.disabled = false;
+                    loadingSpan.style.display = 'none';
+                });
+        }
+
+        function displayResult(response) {
+            var resultDiv = document.getElementById('result');
+            var warningDiv = document.getElementById('warning');
+
+            if (response.code !== 200) {
+                warningDiv.textContent = response.msg;
+                resultDiv.innerHTML = '';
+            } else {
+                warningDiv.textContent = '';
+
+                resultDiv.innerHTML = `
+                    <div id="heroInfo">
+                        <img src="${response.data.photo}" alt="${response.data.name}">
+
+                        <table>
+                            <tr>
+                                <th>查询英雄</th>
+                                <td>${response.data.name}</td>
+                            </tr>
+                            <tr>
+                                <th>查询大区</th>
+                                <td>${response.data.platform}</td>
+                            </tr>
+                            <tr>
+                                <th>最低县标</th>
+                                <td>${response.data.area} (${response.data.areaPower})</td>
+                            </tr>
+                            <tr>
+                                <th>最低市标</th>
+                                <td>${response.data.city} (${response.data.cityPower})</td>
+                            </tr>
+                            <tr>
+                                <th>最低金标</th>
+                                <td>${response.data.province} (${response.data.provincePower})</td>
+                            </tr>
+                            <tr>
+                                <th>最低国服</th>
+                                <td>${response.data.guobiao}</td>
+                            </tr>
+                            <tr>
+                                <th>更新时间</th>
+                                <td>${response.data.updatetime}</td>
+                            </tr>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>
